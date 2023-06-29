@@ -1,8 +1,8 @@
 package client.menu;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import server.ArgsHandler;
+
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -14,20 +14,20 @@ public class Client {
 
         try (
                 Socket socket = new Socket(InetAddress.getByName(ADDRESS), PORT);
-                DataInputStream input = new DataInputStream(socket.getInputStream());
-                DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+                ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
         ) {
             System.out.println("Client started!");
 
-            String request = "Give me a record # 12";
-            System.out.printf("Sent: %s%n", request);
-            output.writeUTF(request);
+            ArgsHandler arguments = new ArgsHandler(args);
+            output.writeObject(arguments);
+            System.out.printf("Sent: %s\n", arguments.getRequest());
 
-            String msg = input.readUTF();
-            System.out.printf("Received: %s%n", msg);
+            String msg = (String) input.readObject();
+            System.out.printf("Received: %s\n", msg);
 
-        } catch (IOException ignored) {
-
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
 
     }
