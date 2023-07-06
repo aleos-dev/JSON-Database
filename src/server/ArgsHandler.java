@@ -1,58 +1,50 @@
 package server;
 
 
+import com.google.gson.Gson;
+
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ArgsHandler implements Serializable {
-    Map<String, String> argsMap;
+    private Map<String, String> argsMap;
 
     public ArgsHandler(String[] args) {
         argsMap = parseArgs(args);
 
     }
+
     public DataBase.Operation getRequestType() {
-        return DataBase.Operation.valueOf(argsMap.get("-t").toUpperCase());
+        return DataBase.Operation.valueOf(argsMap.get("type").toUpperCase());
     }
 
-    public int getIndex() {
-        return Integer.parseInt(argsMap.get("-i"));
+    public String getKey() {
+        return argsMap.get("key");
     }
 
     public String getMessage() {
-        return argsMap.get("-m");
+        return argsMap.get("value");
     }
 
-    public String getRequest() {
-        String type = argsMap.get("-t");
-
-        String index = argsMap.get("-i");
-        if (index == null) {
-            return type;
-        }
-        String message = argsMap.get("-m");
-        if (message == null) {
-            return String.join(" ", type, index);
-        }
-        return String.join(" ", type, index, message);
+    public String getArgsAsGsonObject() {
+        return new Gson().toJson(argsMap);
     }
 
     public boolean containExitCommand() {
-        return "exit".equalsIgnoreCase(argsMap.get("-t"));
+        return "exit".equalsIgnoreCase(argsMap.get("type"));
     }
 
 
     private Map<String, String> parseArgs(String[] args) {
-        Map<String, String> map = new HashMap<>();
+        Map<String, String> map = new LinkedHashMap<>();
         for (int i = 0; i < args.length; i++) {
-            if ("-m".equals(args[i])) {
-                map.put(args[i], String.join(" ", Arrays.copyOfRange(args, i + 1, args.length)));
-                break;
+            switch (args[i]) {
+                case "-t" -> map.put("type", args[i + 1]);
+                case "-k" -> map.put("key", args[i + 1]);
+                case "-v" -> map.put("value", String.join(" ", Arrays.copyOfRange(args, i + 1, args.length)));
             }
-
-            map.put(args[i], args[i + 1]);
             i++;
         }
 

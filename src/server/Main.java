@@ -1,14 +1,14 @@
 package server;
 
+import com.google.gson.Gson;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 public class Main {
     private final static String ADDRESS = "127.0.0.1";
@@ -16,36 +16,35 @@ public class Main {
 
 
     public static void main(String[] args) {
-        List<String> bd = Stream.generate(() -> "").limit(1000).collect(Collectors.toList());
-        DataBase requestHandler = new DataBase(bd);
+        DataBase requestHandler = new DataBase();
 
         try (
                 var server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))
         ) {
             System.out.println("Server started!");
 
-            ArgsHandler arguments;
+            ArgsHandler argsHandler;
+            String jsonString;
             do {
                 try (
                         Socket socket = server.accept();
                         var output = new ObjectOutputStream(socket.getOutputStream());
                         var input = new ObjectInputStream(socket.getInputStream())
                 ) {
-                    arguments = (ArgsHandler) input.readObject();
+                    jsonString = (String) input.readObject();
+                    argsHandler = new Gson().fromJson(jsonString, ArgsHandler.class);
 
-                    String response = requestHandler.handle(arguments);
+                    String response = requestHandler.handle(argsHandler);
                     output.writeObject(response);
 
-                    if (arguments.containExitCommand()) {
-                        break;
-                    }
                 }
 
-            } while (!arguments.containExitCommand());
+            } while (!argsHandler.containExitCommand());
 
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
+
 
 }
