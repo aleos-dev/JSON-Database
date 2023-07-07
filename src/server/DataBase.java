@@ -6,12 +6,18 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 
 public class DataBase {
     enum OperationStatus {OK(), ERROR()}
+    enum Reasons {
+        NO_SUCH_KEY("No such key");
+        private String message;
+        Reasons(String message) {
+            this.message = message;
+        }
+    }
 
 
     enum Operation {
@@ -24,10 +30,9 @@ public class DataBase {
     private final Gson gson = new Gson();
     private String gsonData = "";
     private Map<String, String> dataBase = new HashMap<>();
-    private Map<String, String> response;
+    private Response response;
 
-    public String handle(ArgsHandler arguments) {
-        response = new LinkedHashMap<>();
+    public String handle(ClientRequestHandler arguments) {
         switch (arguments.getRequestType()) {
             case SET -> set(arguments.getKey(), arguments.getMessage());
             case GET -> get(arguments.getKey());
@@ -39,7 +44,7 @@ public class DataBase {
     }
 
     private void disconnect() {
-        response.put("response", OperationStatus.OK.name());
+        response = Response.builder().response(OperationStatus.OK.name()).build();
     }
 
     private void set(String key, String value) {
@@ -47,19 +52,22 @@ public class DataBase {
         dataBase.put(key, value);
         saveDB(dataBase);
 
-        response.put("response", OperationStatus.OK.toString());
+        response = Response.builder().response(OperationStatus.OK.name()).build();
     }
 
     private void get(String key) {
         loadDB();
+
         if (dataBase.containsKey(key)) {
-            response.put("response", OperationStatus.OK.name());
-            response.put("value", dataBase.get(key));
-
+            response = Response.builder()
+                    .response(OperationStatus.OK.name())
+                    .value(dataBase.get(key))
+                    .build();
         } else {
-            response.put("response", OperationStatus.ERROR.name());
-            response.put("reason", "No such key");
-
+            response = Response.builder()
+                    .response(OperationStatus.ERROR.name())
+                    .reason(Reasons.NO_SUCH_KEY.message)
+                    .build();
         }
     }
 
@@ -67,10 +75,13 @@ public class DataBase {
         loadDB();
         if (dataBase.containsKey(key)) {
             dataBase.remove(key);
-            response.put("response", OperationStatus.OK.name());
+            response = Response.builder().response(OperationStatus.OK.name()).build();
+
         } else {
-            response.put("response", OperationStatus.ERROR.name());
-            response.put("reason", "No such key");
+            response = Response.builder()
+                    .response(OperationStatus.ERROR.name())
+                    .reason(Reasons.NO_SUCH_KEY.message)
+                    .build();
         }
         saveDB(dataBase);
     }

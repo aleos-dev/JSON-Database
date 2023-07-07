@@ -1,7 +1,7 @@
 package client.menu;
 
 import com.google.gson.Gson;
-import server.ArgsHandler;
+import server.ClientRequestHandler;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -23,9 +23,9 @@ public class Client {
         ) {
             System.out.println("Client started!");
 
-            ArgsHandler argsHandler = new ArgsHandler(args);
-            output.writeObject(gson.toJson(argsHandler));
-            System.out.printf("Sent: %s\n", argsHandler.getArgsAsGsonObject());
+            ClientRequestHandler clientRequestHandler = new ClientRequestHandler(args);
+            output.writeObject(gson.toJson(clientRequestHandler));
+            System.out.printf("Sent: %s\n", clientRequestHandler.convertRequestToJsonString());
 
             String messageIn = (String) input.readObject();
             System.out.printf("Received: %s\n", messageIn);

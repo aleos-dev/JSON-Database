@@ -16,30 +16,30 @@ public class Main {
 
 
     public static void main(String[] args) {
-        DataBase requestHandler = new DataBase();
+        DataBase requestDataBase = new DataBase();
 
         try (
                 var server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))
         ) {
             System.out.println("Server started!");
 
-            ArgsHandler argsHandler;
-            String jsonString;
+            String clientRequest;
+            ClientRequestHandler clientRequestHandler;
             do {
                 try (
                         Socket socket = server.accept();
                         var output = new ObjectOutputStream(socket.getOutputStream());
                         var input = new ObjectInputStream(socket.getInputStream())
                 ) {
-                    jsonString = (String) input.readObject();
-                    argsHandler = new Gson().fromJson(jsonString, ArgsHandler.class);
+                    clientRequest = (String) input.readObject();
+                    clientRequestHandler = new Gson().fromJson(clientRequest, ClientRequestHandler.class);
 
-                    String response = requestHandler.handle(argsHandler);
+                    String response = requestDataBase.handle(clientRequestHandler);
                     output.writeObject(response);
 
                 }
 
-            } while (!argsHandler.containExitCommand());
+            } while (!clientRequestHandler.containExitCommand());
 
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();

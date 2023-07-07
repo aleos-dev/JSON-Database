@@ -8,32 +8,32 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class ArgsHandler implements Serializable {
-    private Map<String, String> argsMap;
+public class ClientRequestHandler implements Serializable {
+    private final Map<String, String> requestMap;
 
-    public ArgsHandler(String[] args) {
-        argsMap = parseArgs(args);
+    public ClientRequestHandler(String[] args) {
+        requestMap = parseArgs(args);
 
     }
 
     public DataBase.Operation getRequestType() {
-        return DataBase.Operation.valueOf(argsMap.get("type").toUpperCase());
+        return DataBase.Operation.valueOf(requestMap.get("type").toUpperCase());
     }
 
     public String getKey() {
-        return argsMap.get("key");
+        return requestMap.get("key");
     }
 
     public String getMessage() {
-        return argsMap.get("value");
+        return requestMap.get("value");
     }
 
-    public String getArgsAsGsonObject() {
-        return new Gson().toJson(argsMap);
+    public String convertRequestToJsonString() {
+        return new Gson().toJson(requestMap);
     }
 
     public boolean containExitCommand() {
-        return "exit".equalsIgnoreCase(argsMap.get("type"));
+        return "exit".equalsIgnoreCase(requestMap.get("type"));
     }
 
 
