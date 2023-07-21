@@ -1,7 +1,7 @@
 package client.menu;
 
 import com.google.gson.Gson;
-import server.ClientRequestHandler;
+import server.ClientRequest;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -19,13 +19,13 @@ public class Client {
         try (
                 Socket socket = new Socket(InetAddress.getByName(ADDRESS), PORT);
                 ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-                ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+                ObjectInputStream input = new ObjectInputStream(socket.getInputStream())
         ) {
             System.out.println("Client started!");
 
-            ClientRequestHandler clientRequestHandler = new ClientRequestHandler(args);
-            output.writeObject(gson.toJson(clientRequestHandler));
-            System.out.printf("Sent: %s\n", clientRequestHandler.convertRequestToJsonString());
+            ClientRequest clientRequest = new ClientRequest(args);
+            output.writeObject(gson.toJson(clientRequest));
+            System.out.printf("Sent: %s\n", clientRequest.convertRequestToJsonString());
 
             String messageIn = (String) input.readObject();
             System.out.printf("Received: %s\n", messageIn);

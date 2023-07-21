@@ -1,46 +1,52 @@
 package server;
 
-
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import server.jsonservice.JsonDatabaseHandler;
 
-import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 
-
 public class DataBase {
-    enum OperationStatus {OK(), ERROR()}
-    enum Reasons {
+
+
+
+    public enum OperationStatus {
+        OK, ERROR
+    }
+
+    public enum Reason {
         NO_SUCH_KEY("No such key");
-        private String message;
-        Reasons(String message) {
+
+        private final String message;
+
+        Reason(String message) {
             this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 
-
-    enum Operation {
-        SET,
-        GET,
-        DELETE,
-        EXIT
+    public enum Operation {
+        SET, GET, DELETE, EXIT
     }
 
     private final Gson gson = new Gson();
-    private String gsonData = "";
-    private Map<String, String> dataBase = new HashMap<>();
+    private final JsonDatabaseHandler dbHandler = new JsonDatabaseHandler();
+    private Map<String, String> db;
     private Response response;
 
-    public String handle(ClientRequestHandler arguments) {
-        switch (arguments.getRequestType()) {
-            case SET -> set(arguments.getKey(), arguments.getMessage());
-            case GET -> get(arguments.getKey());
-            case DELETE -> delete(arguments.getKey());
+
+
+    public String handle(ClientRequest request) {
+        switch (request.getOperation()) {
+            case SET -> set(request.getKey(), request.getValue());
+            case GET -> get(request.getKey());
+            case DELETE -> delete(request.getKey());
             case EXIT -> disconnect();
         }
 
-        return gson.toJson(response);
+        return serializeResponse(response);
     }
 
     private void disconnect() {
@@ -48,55 +54,51 @@ public class DataBase {
     }
 
     private void set(String key, String value) {
-        loadDB();
-        dataBase.put(key, value);
-        saveDB(dataBase);
+        readDb();
+        db.put(key, value);
+        writeDb();
 
         response = Response.builder().response(OperationStatus.OK.name()).build();
     }
 
     private void get(String key) {
-        loadDB();
-
-        if (dataBase.containsKey(key)) {
+        readDb();
+        if (db.containsKey(key)) {
             response = Response.builder()
                     .response(OperationStatus.OK.name())
-                    .value(dataBase.get(key))
+                    .value(db.get(key))
                     .build();
         } else {
             response = Response.builder()
                     .response(OperationStatus.ERROR.name())
-                    .reason(Reasons.NO_SUCH_KEY.message)
+                    .reason(Reason.NO_SUCH_KEY.getMessage())
                     .build();
         }
     }
 
     private void delete(String key) {
-        loadDB();
-        if (dataBase.containsKey(key)) {
-            dataBase.remove(key);
+        readDb();
+        if (db.containsKey(key)) {
+            db.remove(key);
+            writeDb();
             response = Response.builder().response(OperationStatus.OK.name()).build();
-
         } else {
             response = Response.builder()
                     .response(OperationStatus.ERROR.name())
-                    .reason(Reasons.NO_SUCH_KEY.message)
+                    .reason(Reason.NO_SUCH_KEY.getMessage())
                     .build();
         }
-        saveDB(dataBase);
     }
 
-    private void loadDB() {
-        if (dataBase.isEmpty()) {
-            return;
-        }
-        Type hashMapType = new TypeToken<HashMap<String, String>>() {
-        }.getType();
-        dataBase = gson.fromJson(gsonData, hashMapType);
+    private void readDb() {
+            db = dbHandler.read();
     }
 
-    private void saveDB(Map<String, String> data) {
-        gsonData = gson.toJson(data, HashMap.class);
+    private void writeDb() {
+            dbHandler.write(db);
     }
 
+    private String serializeResponse(Response response) {
+        return gson.toJson(response);
+    }
 }
