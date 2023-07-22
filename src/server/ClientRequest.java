@@ -1,6 +1,5 @@
 package server;
 
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -12,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -20,21 +18,11 @@ import java.util.stream.Stream;
 public class ClientRequest implements Serializable {
     private final Map<String, String> requestMap;
 
-
     private final transient Gson gson = new Gson();
-    private final String clientDataPath = System.getProperty("user.dir") + File.separator +
-            "src" + File.separator +
-            "client" + File.separator +
-            "data";
-    private final transient Path requestPath = Path.of(clientDataPath);
+    private final transient Path pathToFileWithRequest = Path.of(System.getProperty("user.dir") + "/src/client/data");
 
     public ClientRequest(String[] args) throws IOException {
         requestMap = parseArgs(args);
-
-    }
-
-    public String[] getClientRequestFromFile(String fileName) {
-        return read(requestPath.resolve(fileName));
     }
 
     public DataBase.Operation getOperation() {
@@ -58,25 +46,28 @@ public class ClientRequest implements Serializable {
     }
 
 
-    private Map<String, String> parseArgs(String[] args) throws IOException {
+    private Map<String, String> parseArgs(String[] args) {
         Map<String, String> map = new LinkedHashMap<>();
+
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "-t", "type" -> map.put("type", args[i + 1]);
                 case "-k", "key" -> map.put("key", args[i + 1]);
                 case "-v", "value" -> map.put("value", String.join(" ", Arrays.copyOfRange(args, i + 1, args.length)));
-                case "-in" -> { return parseArgs(getClientRequestFromFile(args[i + 1])); }
+                case "-in" -> {
+                    String fileName = args[i + 1];
+                    String[] request = readRequestFromFile(fileName);
+                    return parseArgs(request);
+                }
             }
             i++;
         }
-
         return map;
     }
 
-
-    private String[] read(Path path) {
-
+    private String[] readRequestFromFile(String fileName) {
         Map<String, String> database = new LinkedHashMap<>();
+        Path path = pathToFileWithRequest.resolve(fileName);
 
         try {
             String serializedData = Files.readString(path, StandardCharsets.UTF_8);
@@ -89,7 +80,6 @@ public class ClientRequest implements Serializable {
         } catch (IOException e) {
             System.out.println(("files readString error"));
         }
-
 
         return database.entrySet().stream()
                 .flatMap(entry -> Stream.of(entry.getKey(), entry.getValue()))

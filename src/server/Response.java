@@ -1,6 +1,7 @@
 package server;
 
 public class Response {
+
     private String response;
     private String value;
     private String reason;
@@ -9,24 +10,12 @@ public class Response {
         return new Builder();
     }
 
-    public String getResponse() {
-        return response;
-    }
-
     public void setResponse(String response) {
         this.response = response;
     }
 
-    public String getValue() {
-        return value;
-    }
-
     public void setValue(String value) {
         this.value = value;
-    }
-
-    public String getReason() {
-        return reason;
     }
 
     public void setReason(String reason) {
@@ -41,8 +30,8 @@ public class Response {
             this.response = new Response();
         }
 
-        public Builder response(String response) {
-            this.response.setResponse(response);
+        public Builder status(String status) {
+            this.response.setResponse(status);
             return this;
         }
 

@@ -1,41 +1,29 @@
 package server;
 
 import com.google.gson.Gson;
-import server.jsonservice.JsonDatabaseHandler;
+import server.jsonservice.JsonService;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class DataBase {
+    public enum Operation {SET, GET, DELETE, EXIT}
 
-
-
-    public enum OperationStatus {
-        OK, ERROR
-    }
-
-    public enum Reason {
-        NO_SUCH_KEY("No such key");
-
-        private final String message;
-
-        Reason(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
-
-    public enum Operation {
-        SET, GET, DELETE, EXIT
-    }
+    private static final String OK = "OK";
+    private static final String ERROR = "ERROR";
+    private static final String NO_SUCH_KEY = "No such key";
 
     private final Gson gson = new Gson();
-    private final JsonDatabaseHandler dbHandler = new JsonDatabaseHandler();
+    private final Path pathToDatabase = Path.of(System.getProperty("user.dir") + "/src/server/data/db.json");
+    private final JsonService dbHandler = new JsonService(pathToDatabase);
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+//    /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
+
     private Map<String, String> db;
     private Response response;
-
 
 
     public String handle(ClientRequest request) {
@@ -45,12 +33,11 @@ public class DataBase {
             case DELETE -> delete(request.getKey());
             case EXIT -> disconnect();
         }
-
-        return serializeResponse(response);
+        return serializeResponseToJson(response);
     }
 
     private void disconnect() {
-        response = Response.builder().response(OperationStatus.OK.name()).build();
+        response = Response.builder().status(OK).build();
     }
 
     private void set(String key, String value) {
@@ -58,21 +45,15 @@ public class DataBase {
         db.put(key, value);
         writeDb();
 
-        response = Response.builder().response(OperationStatus.OK.name()).build();
+        response = Response.builder().status(OK).build();
     }
 
     private void get(String key) {
         readDb();
         if (db.containsKey(key)) {
-            response = Response.builder()
-                    .response(OperationStatus.OK.name())
-                    .value(db.get(key))
-                    .build();
+            response = Response.builder().status(OK).value(db.get(key)).build();
         } else {
-            response = Response.builder()
-                    .response(OperationStatus.ERROR.name())
-                    .reason(Reason.NO_SUCH_KEY.getMessage())
-                    .build();
+            response = Response.builder().status(ERROR).reason(NO_SUCH_KEY).build();
         }
     }
 
@@ -81,24 +62,35 @@ public class DataBase {
         if (db.containsKey(key)) {
             db.remove(key);
             writeDb();
-            response = Response.builder().response(OperationStatus.OK.name()).build();
+            response = Response.builder().status(OK).build();
         } else {
-            response = Response.builder()
-                    .response(OperationStatus.ERROR.name())
-                    .reason(Reason.NO_SUCH_KEY.getMessage())
-                    .build();
+            response = Response.builder().status(ERROR).reason(NO_SUCH_KEY).build();
         }
     }
 
     private void readDb() {
+        lock.readLock().lock();
+        try {
             db = dbHandler.read();
+        } catch (IOException e) {
+            db = new HashMap<>();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     private void writeDb() {
+        lock.writeLock().lock();
+        try {
             dbHandler.write(db);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
-    private String serializeResponse(Response response) {
+    private String serializeResponseToJson(Response response) {
         return gson.toJson(response);
     }
 }
