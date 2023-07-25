@@ -1,7 +1,7 @@
 package client.menu;
 
-import com.google.gson.Gson;
-import server.ClientRequest;
+import server.Request;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -24,13 +24,11 @@ public class Client {
     }
 
     private static void sendRequest(String[] args, Socket socket) throws IOException {
-        Gson gson = new Gson();
-
         ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-        ClientRequest clientRequest = new ClientRequest(args);
+        Request request = new Request(args);
 
-        output.writeObject(gson.toJson(clientRequest));
-        System.out.printf("Sent: %s\n", clientRequest.convertRequestToJsonString());
+        output.writeObject(request.get().toString());
+        System.out.printf("Sent: %s\n", request);
     }
 
     private static void getResponse(Socket socket) throws IOException, ClassNotFoundException {

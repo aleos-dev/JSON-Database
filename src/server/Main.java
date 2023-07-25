@@ -1,6 +1,8 @@
 package server;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -38,23 +40,23 @@ public class Main {
     }
 
     private static void waitSession(Socket socket, DataBase db) {
-        ClientRequest clientRequestHandler;
+        Request requestHandler;
 
         try {
             var output = new ObjectOutputStream(socket.getOutputStream());
             var input = new ObjectInputStream(socket.getInputStream());
 
-            String request = (String) input.readObject();
-            clientRequestHandler = new Gson().fromJson(request, ClientRequest.class);
+            String receivedJson = (String) input.readObject();
+            JsonObject request = JsonParser.parseString(receivedJson).getAsJsonObject();
 
             EXECUTOR.submit(() -> {
                 try {
-                    String response = db.handle(clientRequestHandler);
+                    String response = db.handle(request);
                     output.writeObject(response);
 
-                    if (clientRequestHandler.containExitCommand()) {
-                        SERVER_SOCKET.close();
-                    }
+//                    if (requestHandler.isExitCommand()) {
+//                        SERVER_SOCKET.close();
+//                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
