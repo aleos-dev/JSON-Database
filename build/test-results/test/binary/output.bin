@@ -1,71 +1,0 @@
-[1;31m
-Start test 1[0m
-Server started!
-Client started!
-Sent: {"type":"exit"}
-Received: {"response":"OK"}
-[1;31m
-Start test 2[0m
-[1;31m
-Start test 3[0m
-Server started!
-Client started!
-Sent: {"type":"get","key":"1"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-6Sent: {"type":"set","key":"1","value":"Hello world!"}
-~Writing to: /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
-Received: {"response":"OK"}
-Client started!
-5Sent: {"type":"set","key":"1","value":"HelloWorld!"}
-~Writing to: /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
-Received: {"response":"OK"}
-Client started!
-Sent: {"type":"get","key":"1"}
-2Received: {"response":"OK","value":"HelloWorld!"}
-Client started!
-"Sent: {"type":"delete","key":"1"}
-~Writing to: /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
-Received: {"response":"OK"}
-Client started!
-"Sent: {"type":"delete","key":"1"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-Sent: {"type":"get","key":"1"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-;Sent: {"type":"set","key":"text","value":"Some text here"}
-~Writing to: /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
-Received: {"response":"OK"}
-Client started!
-"Sent: {"type":"get","key":"text"}
-5Received: {"response":"OK","value":"Some text here"}
-Client started!
- Sent: {"type":"get","key":"56"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-#Sent: {"type":"delete","key":"56"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-$Sent: {"type":"delete","key":"100"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-<Sent: {"type":"delete","key":"That key doesn\u0027t exist"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-1Sent: {"type":"set","key":"name","value":"Kate"}
-~Writing to: /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
-Received: {"response":"OK"}
-Client started!
-"Sent: {"type":"get","key":"name"}
-+Received: {"response":"OK","value":"Kate"}
-Client started!
-%Sent: {"type":"delete","key":"name"}
-~Writing to: /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
-Received: {"response":"OK"}
-Client started!
-"Sent: {"type":"get","key":"name"}
-6Received: {"response":"ERROR","reason":"No such key"}
-Client started!
-Sent: {"type":"exit"}
-Received: {"response":"OK"}
