@@ -1,6 +1,5 @@
 package server;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -15,23 +14,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Main {
+    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(5);
     private static final String ADDRESS = "127.0.0.1";
     private static final int PORT = 23456;
-    private static ServerSocket SERVER_SOCKET;
-    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(5);
+    private static volatile boolean isRunning = true;
+    private static ServerSocket server;
 
     public static void main(String[] args) {
         DataBase db = new DataBase();
 
-        try (var server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))) {
+        try {
+            server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS));
             System.out.println("Server started!");
-            SERVER_SOCKET = server;
 
-            while (true) {
+            while (isRunning) {
                 waitSession(server.accept(), db);
             }
         } catch (SocketException e) {
-            /* IGNORED */
+            if (!isRunning) {
+                System.out.println("Server is shutting down...");
+            } else {
+                e.printStackTrace();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -40,8 +44,6 @@ public class Main {
     }
 
     private static void waitSession(Socket socket, DataBase db) {
-        Request requestHandler;
-
         try {
             var output = new ObjectOutputStream(socket.getOutputStream());
             var input = new ObjectInputStream(socket.getInputStream());
@@ -54,9 +56,10 @@ public class Main {
                     String response = db.handle(request);
                     output.writeObject(response);
 
-//                    if (requestHandler.isExitCommand()) {
-//                        SERVER_SOCKET.close();
-//                    }
+                    if ("exit".equalsIgnoreCase(request.get("type").getAsString())) {
+                        isRunning = false;
+                        server.close();
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {

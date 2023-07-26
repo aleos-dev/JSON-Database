@@ -16,12 +16,13 @@ public class DataBase {
     private static final String OK = "OK";
     private static final String ERROR = "ERROR";
     private static final String NO_SUCH_KEY = "No such key";
+    private static final String UNSUPPORTED_OPERATION = "Unsupported operation";
 
-    private final Gson gson = new Gson();
-    private final Path pathToDatabase = Path.of(System.getProperty("user.dir") + "/src/server/data/db.json");
+    private final Path pathToDatabase = Path.of(System.getProperty("user.dir") +
+            "/JSON Database (Java)/task/src/server/data/db.json");
     private final JsonService dbHandler = new JsonService(pathToDatabase);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-//    /home/aleos/Documents/development/java/hyperskill/JSON Database/JSON Database (Java)/task/src/server/data/db.json
+    private final Gson gson = new Gson();
 
     private JsonObject db;
     private Response response;
@@ -30,49 +31,115 @@ public class DataBase {
     public String handle(JsonObject request) {
         switch (getOperation(request)) {
             case SET -> handleSetOperation(request);
-//            case GET -> get(request.getKey());
-//            case DELETE -> delete(request.getKey());
-//            case EXIT -> disconnect();
+            case GET -> handleGetOperation(request);
+            case DELETE -> handleDeleteOperation(request);
+            case EXIT -> disconnect();
+            default -> response = Response.builder().status(ERROR).reason(UNSUPPORTED_OPERATION).build();
         }
         return serializeResponseToJson(response);
     }
 
     private void handleSetOperation(JsonObject request) {
-        readDb();
+        readDatabase();
         JsonElement key = request.get("key");
+        JsonElement value = request.get("value");
 
         if (key.isJsonArray()) {
-            JsonArray keys = request.getAsJsonArray("key");
+            JsonArray keyArray = key.getAsJsonArray();
+            JsonObject targetJsonObject = findOrCreateTargetJsonObject(keyArray);
 
+            int lastKeyIndex = keyArray.size() - 1;
+            targetJsonObject.add(keyArray.get(lastKeyIndex).getAsString(), value);
         } else {
-
-//            handleSetOperation();
+            db.add(key.getAsString(), value);
         }
 
-        writeDb();
+        writeDatabase();
         response = Response.builder().status(OK).build();
     }
 
+    private void handleGetOperation(JsonObject request) {
+        readDatabase();
+        JsonElement key = request.get("key");
+        JsonElement value;
 
-    private JsonObject findRootForKeyElement(JsonArray keys, JsonObject root) {
-        JsonElement je = root.get("key");
-
-        if (keys.size() ==)
-
-        String key = keys.get(0).getAsString();
-
-        if (keys.size() == 1 ) {
-            i
-            return root.getAsJsonObject(keyEl.toString());
-        }
-
-        if (je.isJsonNull() || je.isJsonPrimitive()) {
-            return root;
+        if (key.isJsonArray()) {
+            JsonArray keyArray = key.getAsJsonArray();
+            JsonObject targetJsonObject = getTargetJsonObject(keyArray);
+            int lastKeyIndex = keyArray.size() - 1;
+            value = targetJsonObject == null ? null : targetJsonObject.get(keyArray.get(lastKeyIndex).getAsString());
         } else {
-//           find
+            value = request.get(key.toString());
         }
 
-        return je;
+        if (value != null) {
+            response = Response.builder().status(OK).value(value).build();
+        } else {
+            response = Response.builder().status(ERROR).reason(NO_SUCH_KEY).build();
+        }
+    }
+
+
+    private void handleDeleteOperation(JsonObject request) {
+        readDatabase();
+        JsonElement key = request.get("key");
+        JsonObject targetJsonObject;
+
+        if (key.isJsonArray()) {
+            JsonArray keyArray = key.getAsJsonArray();
+            targetJsonObject = getTargetJsonObject(keyArray);
+
+            if (targetJsonObject == null) {
+                response = Response.builder().status(ERROR).reason(NO_SUCH_KEY).build();
+                return;
+            }
+            int lastKeyIndex = keyArray.size() - 1;
+            if (targetJsonObject.remove(keyArray.get(lastKeyIndex).getAsString()) == null) {
+                response = Response.builder().status(ERROR).reason(NO_SUCH_KEY).build();
+                return;
+
+            }
+        }
+
+        writeDatabase();
+        response = Response.builder().status(OK).build();
+    }
+
+    private JsonObject getTargetJsonObject(JsonArray keys) {
+        JsonObject root = db;
+
+        for (int i = 0; i < keys.size() - 1; i++) {
+            String key = keys.get(i).getAsString();
+
+            JsonElement value = root.get(key);
+
+            if (value == null || value.isJsonPrimitive() || value.isJsonArray()) {
+                return null;
+            } else if (value.isJsonObject()) {
+                root = value.getAsJsonObject();
+            }
+        }
+        return root;
+    }
+
+    private JsonObject findOrCreateTargetJsonObject(JsonArray keys) {
+        JsonObject root = db;
+
+        for (int i = 0; i < keys.size() - 1; i++) {
+            JsonObject newJsonObj = null;
+            String key = keys.get(i).getAsString();
+
+            assert root != null;
+            JsonElement value = root.get(key);
+            if (value.isJsonPrimitive() || value.isJsonArray()) {
+                newJsonObj = new JsonObject();
+                root.add(key, newJsonObj);
+            } else if (value.isJsonObject()) {
+                newJsonObj = value.getAsJsonObject();
+            }
+            root = newJsonObj;
+        }
+        return root;
     }
 
     private Operation getOperation(JsonObject request) {
@@ -84,35 +151,7 @@ public class DataBase {
         response = Response.builder().status(OK).build();
     }
 
-    private void set(String key, String value) {
-        readDb();
-//        db.put(key, value);
-        writeDb();
-
-        response = Response.builder().status(OK).build();
-    }
-
-//    private void get(String key) {
-//        readDb();
-//        if (db.containsKey(key)) {
-//            response = Response.builder().status(OK).value(db.get(key)).build();
-//        } else {
-//            response = Response.builder().status(ERROR).reason(NO_SUCH_KEY).build();
-//        }
-//    }
-//
-//    private void delete(String key) {
-//        readDb();
-//        if (db.containsKey(key)) {
-//            db.remove(key);
-//            writeDb();
-//            response = Response.builder().status(OK).build();
-//        } else {
-//            response = Response.builder().status(ERROR).reason(NO_SUCH_KEY).build();
-//        }
-//    }
-
-    private void readDb() {
+    private void readDatabase() {
         lock.readLock().lock();
         try {
             db = (JsonObject) dbHandler.read();
@@ -123,7 +162,7 @@ public class DataBase {
         }
     }
 
-    private void writeDb() {
+    private void writeDatabase() {
         lock.writeLock().lock();
         try {
             dbHandler.write(db);

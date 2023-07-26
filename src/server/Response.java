@@ -3,25 +3,27 @@ package server;
 public class Response {
 
     private String response;
-    private String value;
+    private Object value;
     private String reason;
+
+    private Response() {
+    }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void setResponse(String response) {
+    private void setResponse(String response) {
         this.response = response;
     }
 
-    public void setValue(String value) {
+    private void setValue(Object value) {
         this.value = value;
     }
 
-    public void setReason(String reason) {
+    private void setReason(String reason) {
         this.reason = reason;
     }
-
 
     public static class Builder {
         private final Response response;
@@ -35,7 +37,7 @@ public class Response {
             return this;
         }
 
-        public Builder value(String value) {
+        public Builder value(Object value) {
             response.setValue(value);
             return this;
         }
@@ -48,5 +50,14 @@ public class Response {
         public Response build() {
             return response;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Response{" +
+                "response='" + response + '\'' +
+                ", value=" + value +
+                ", reason='" + reason + '\'' +
+                '}';
     }
 }
